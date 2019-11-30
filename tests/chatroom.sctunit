@@ -1,0 +1,37 @@
+testclass ChatRoomTests for statechart ChatRoom {
+	
+	@Test
+	operation connect_and_disconnect_wait() {
+		enter
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Connected.connected_region.isConnected)
+		raise Network.joined
+		assert active(main_region.Connected.connected_region.Joined)
+		proceed 10 s
+		assert active(main_region.Connected.connected_region.Leaving)
+		exit
+	}
+	
+	@Test
+	operation connect_and_disconnect_ui_input() {
+		enter
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Connected.connected_region.isConnected)
+		raise Network.joined
+		assert active(main_region.Connected.connected_region.Joined)
+		raise UI.input: "k"
+		assert active(main_region.Connected.connected_region.Leaving)
+		exit
+	}
+
+	
+
+}

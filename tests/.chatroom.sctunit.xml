@@ -1,0 +1,6 @@
+<testsuite name="ChatRoomTests" time="">
+  <testcase name="connect_and_disconnect_wait" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#ChatRoomTests.connect_and_disconnect_wait" time="">
+  </testcase>
+  <testcase name="connect_and_disconnect_ui_input" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#ChatRoomTests.connect_and_disconnect_ui_input" time="">
+  </testcase>
+</testsuite>

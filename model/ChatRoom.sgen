@@ -1,0 +1,22 @@
+GeneratorModel for yakindu::java {
+
+	statechart ChatRoom {
+	 	
+		feature Outlet {
+			targetProject = "ChatRoom"
+			targetFolder = "src-gen"
+		}
+
+		feature Naming {
+			basePackage = "chatroom"
+			implementationSuffix =""
+		}
+
+		feature GeneralFeatures {
+			RuntimeService = true
+			TimerService = true
+			InterfaceObserverSupport = true
+			synchronized = true
+		}
+	}
+}
