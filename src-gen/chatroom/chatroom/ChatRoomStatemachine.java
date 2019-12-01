@@ -316,12 +316,14 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving,
 		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left,
 		main_region_Connected_polling_region_Polling,
-		main_region_Connected_polling_region_Polling_r1_sendpoll,
-		main_region_Connected_polling_region_Polling_r1_serveralive,
+		main_region_Connected_polling_region_Polling_r1_pollinginput,
+		main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll,
+		main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive,
+		main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput,
 		$NullState$
 	};
 	
-	private final State[] stateVector = new State[2];
+	private final State[] stateVector = new State[3];
 	
 	private int nextStateIndex;
 	
@@ -340,6 +342,21 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	protected void setCurrentserverindex(long value) {
 		synchronized(ChatRoomStatemachine.this) {
 			this.currentserverindex = value;
+		}
+	}
+	
+	
+	private String inputafterlastpoll;
+	
+	protected String getInputafterlastpoll() {
+		synchronized(ChatRoomStatemachine.this) {
+			return inputafterlastpoll;
+		}
+	}
+	
+	protected void setInputafterlastpoll(String value) {
+		synchronized(ChatRoomStatemachine.this) {
+			this.inputafterlastpoll = value;
 		}
 	}
 	
@@ -367,12 +384,14 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			throw new IllegalStateException("Operation callback for interface sCIUtil must be set.");
 		}
 		
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 3; i++) {
 			stateVector[i] = State.$NullState$;
 		}
 		clearEvents();
 		clearOutEvents();
 		setCurrentserverindex(0);
+		
+		setInputafterlastpoll("");
 	}
 	
 	public synchronized void enter() {
@@ -409,11 +428,14 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left_react(true);
 				break;
-			case main_region_Connected_polling_region_Polling_r1_sendpoll:
-				main_region_Connected_polling_region_Polling_r1_sendpoll_react(true);
+			case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+				main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_react(true);
 				break;
-			case main_region_Connected_polling_region_Polling_r1_serveralive:
-				main_region_Connected_polling_region_Polling_r1_serveralive_react(true);
+			case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+				main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_react(true);
+				break;
+			case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+				main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_react(true);
 				break;
 			default:
 				// $NullState$
@@ -429,7 +451,7 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	 * @see IStatemachine#isActive()
 	 */
 	public synchronized boolean isActive() {
-		return stateVector[0] != State.$NullState$||stateVector[1] != State.$NullState$;
+		return stateVector[0] != State.$NullState$||stateVector[1] != State.$NullState$||stateVector[2] != State.$NullState$;
 	}
 	
 	/** 
@@ -471,7 +493,7 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			return stateVector[0] == State.main_region_Disconnected_disconnected_region_connecting;
 		case main_region_Connected:
 			return stateVector[0].ordinal() >= State.
-					main_region_Connected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_serveralive.ordinal();
+					main_region_Connected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow:
 			return stateVector[0].ordinal() >= State.
 					main_region_Connected_connection_lifetime_region_ConnectionFlow.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left.ordinal();
@@ -485,11 +507,16 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left;
 		case main_region_Connected_polling_region_Polling:
 			return stateVector[1].ordinal() >= State.
-					main_region_Connected_polling_region_Polling.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_serveralive.ordinal();
-		case main_region_Connected_polling_region_Polling_r1_sendpoll:
-			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_sendpoll;
-		case main_region_Connected_polling_region_Polling_r1_serveralive:
-			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_serveralive;
+					main_region_Connected_polling_region_Polling.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput:
+			return stateVector[1].ordinal() >= State.
+					main_region_Connected_polling_region_Polling_r1_pollinginput.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll;
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive;
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+			return stateVector[2] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput;
 		default:
 			return false;
 		}
@@ -566,16 +593,18 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	}
 	
 	/* Entry action for state 'sendpoll'. */
-	private void entryAction_main_region_Connected_polling_region_Polling_r1_sendpoll() {
+	private void entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
 		timer.setTimer(this, 1, (20 * 1000), false);
 		
 		sCIUtil.operationCallback.print("polling connected server");
+		
+		setInputafterlastpoll("");
 		
 		sCINetwork.raisePoll();
 	}
 	
 	/* Entry action for state 'serveralive'. */
-	private void entryAction_main_region_Connected_polling_region_Polling_r1_serveralive() {
+	private void entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
 		timer.setTimer(this, 2, (10 * 1000), false);
 		
 		sCIUtil.operationCallback.print("connected server is still alive.");
@@ -587,12 +616,12 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	}
 	
 	/* Exit action for state 'sendpoll'. */
-	private void exitAction_main_region_Connected_polling_region_Polling_r1_sendpoll() {
+	private void exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
 		timer.unsetTimer(this, 1);
 	}
 	
 	/* Exit action for state 'serveralive'. */
-	private void exitAction_main_region_Connected_polling_region_Polling_r1_serveralive() {
+	private void exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
 		timer.unsetTimer(this, 2);
 	}
 	
@@ -652,18 +681,30 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		enterSequence_main_region_Connected_polling_region_Polling_r1_default();
 	}
 	
+	/* 'default' enter sequence for state pollinginput */
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_default() {
+		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_default();
+		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_default();
+	}
+	
 	/* 'default' enter sequence for state sendpoll */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_sendpoll_default() {
-		entryAction_main_region_Connected_polling_region_Polling_r1_sendpoll();
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default() {
+		entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
 		nextStateIndex = 1;
-		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_sendpoll;
+		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll;
 	}
 	
 	/* 'default' enter sequence for state serveralive */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_serveralive_default() {
-		entryAction_main_region_Connected_polling_region_Polling_r1_serveralive();
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_default() {
+		entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
 		nextStateIndex = 1;
-		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_serveralive;
+		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive;
+	}
+	
+	/* 'default' enter sequence for state rememberinginput */
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default() {
+		nextStateIndex = 2;
+		stateVector[2] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -694,6 +735,16 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	/* 'default' enter sequence for region r1 */
 	private void enterSequence_main_region_Connected_polling_region_Polling_r1_default() {
 		react_main_region_Connected_polling_region_Polling_r1__entry_Default();
+	}
+	
+	/* 'default' enter sequence for region r1 */
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_default() {
+		react_main_region_Connected_polling_region_Polling_r1_pollinginput_r1__entry_Default();
+	}
+	
+	/* 'default' enter sequence for region r2 */
+	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_default() {
+		react_main_region_Connected_polling_region_Polling_r1_pollinginput_r2__entry_Default();
 	}
 	
 	/* Default exit sequence for state Disconnected */
@@ -740,19 +791,25 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	}
 	
 	/* Default exit sequence for state sendpoll */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_sendpoll() {
+	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
 		nextStateIndex = 1;
 		stateVector[1] = State.$NullState$;
 		
-		exitAction_main_region_Connected_polling_region_Polling_r1_sendpoll();
+		exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
 	}
 	
 	/* Default exit sequence for state serveralive */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_serveralive() {
+	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
 		nextStateIndex = 1;
 		stateVector[1] = State.$NullState$;
 		
-		exitAction_main_region_Connected_polling_region_Polling_r1_serveralive();
+		exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+	}
+	
+	/* Default exit sequence for state rememberinginput */
+	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput() {
+		nextStateIndex = 2;
+		stateVector[2] = State.$NullState$;
 	}
 	
 	/* Default exit sequence for region main region */
@@ -778,11 +835,19 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		}
 		
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[2]) {
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
 			break;
 		default:
 			break;
@@ -843,11 +908,19 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	/* Default exit sequence for region polling region */
 	private void exitSequence_main_region_Connected_polling_region() {
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[2]) {
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
 			break;
 		default:
 			break;
@@ -857,11 +930,44 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	/* Default exit sequence for region r1 */
 	private void exitSequence_main_region_Connected_polling_region_Polling_r1() {
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[2]) {
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r1 */
+	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1() {
+		switch (stateVector[1]) {
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+			break;
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r2 */
+	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2() {
+		switch (stateVector[2]) {
+		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
 			break;
 		default:
 			break;
@@ -890,7 +996,17 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	
 	/* Default react sequence for initial entry  */
 	private void react_main_region_Connected_polling_region_Polling_r1__entry_Default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_sendpoll_default();
+		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_default();
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region_Connected_polling_region_Polling_r1_pollinginput_r1__entry_Default() {
+		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default();
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region_Connected_polling_region_Polling_r1_pollinginput_r2__entry_Default() {
+		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
 	}
 	
 	/* Default react sequence for initial entry  */
@@ -1026,18 +1142,31 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_sendpoll_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
 			if (main_region_Connected_polling_region_Polling_react(try_transition)==false) {
+				did_transition = false;
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_polling_region_Polling_r1_pollinginput_react(try_transition)==false) {
 				if (sCINetwork.alive) {
-					exitSequence_main_region_Connected_polling_region_Polling_r1_sendpoll();
-					enterSequence_main_region_Connected_polling_region_Polling_r1_serveralive_default();
+					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_default();
 				} else {
 					if (timeEvents[1]) {
 						exitSequence_main_region_Connected();
-						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate(sCIUtil.operationCallback.concatenate("server ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), "is not responding.Disconnecting"), "info");
+						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate(sCIUtil.operationCallback.concatenate("server ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), " is not responding. Disconnecting"), "info");
+						
+						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("Showing input sent after last poll: ", getInputafterlastpoll()), "info");
 						
 						setCurrentserverindex(currentserverindex<(sCINetwork.operationCallback.get_nr_of_servers() - 1) ? (currentserverindex + 1) : 0);
 						
@@ -1051,14 +1180,37 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_serveralive_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
-			if (main_region_Connected_polling_region_Polling_react(try_transition)==false) {
+			if (main_region_Connected_polling_region_Polling_r1_pollinginput_react(try_transition)==false) {
 				if (timeEvents[2]) {
-					exitSequence_main_region_Connected_polling_region_Polling_r1_serveralive();
-					enterSequence_main_region_Connected_polling_region_Polling_r1_sendpoll_default();
+					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (((sCIUI.input) && (sCIUtil.operationCallback.is_alphanumerical(sCIUI.getInputValue())))) {
+				exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+				setInputafterlastpoll(sCIUtil.operationCallback.concatenate(getInputafterlastpoll(), sCIUI.getInputValue()));
+				
+				enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
+			} else {
+				if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+					setInputafterlastpoll(sCIUtil.operationCallback.remove_last_char(getInputafterlastpoll()));
+					
+					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
 				} else {
 					did_transition = false;
 				}

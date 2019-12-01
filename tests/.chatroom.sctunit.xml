@@ -5,4 +5,6 @@
   </testcase>
   <testcase name="check_user_input_while_disconnected" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_user_input_while_disconnected" time="">
   </testcase>
+  <testcase name="check_polling" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_polling" time="">
+  </testcase>
 </testsuite>
