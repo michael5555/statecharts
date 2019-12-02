@@ -1,10 +1,12 @@
 <testsuite name="ChatRoomTests" time="">
-  <testcase name="connect_and_disconnect_first_in_server_list" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.connect_and_disconnect_first_in_server_list" time="">
+  <testcase name="connect_first_in_server_list" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.connect_first_in_server_list" time="">
   </testcase>
-  <testcase name="connect_and_disconnect_second_in_server_list" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.connect_and_disconnect_second_in_server_list" time="">
+  <testcase name="connect_second_in_server_list" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.connect_second_in_server_list" time="">
   </testcase>
   <testcase name="check_user_input_while_disconnected" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_user_input_while_disconnected" time="">
   </testcase>
   <testcase name="check_polling" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_polling" time="">
+  </testcase>
+  <testcase name="check_joining" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_joining" time="">
   </testcase>
 </testsuite>
