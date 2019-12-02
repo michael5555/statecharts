@@ -9,4 +9,10 @@
   </testcase>
   <testcase name="check_joining" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_joining" time="">
   </testcase>
+  <testcase name="check_leaving_room" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_leaving_room" time="">
+  </testcase>
+  <testcase name="check_sending_message" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_sending_message" time="">
+  </testcase>
+  <testcase name="check_disconnecting_from_chatroom" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_disconnecting_from_chatroom" time="">
+  </testcase>
 </testsuite>

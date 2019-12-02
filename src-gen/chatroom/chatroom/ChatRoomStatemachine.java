@@ -309,27 +309,36 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	public enum State {
 		main_region_Disconnected,
 		main_region_Disconnected_disconnected_region_connecting,
+		main_region_Disconnected_disconnected_region_sudden_disconnection,
 		main_region_Connected,
 		main_region_Connected_connection_lifetime_region_ConnectionFlow,
 		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected,
-		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined,
 		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving,
 		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage,
+		main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage,
 		main_region_Connected_polling_region_Polling,
-		main_region_Connected_polling_region_Polling_r1_pollinginput,
-		main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll,
-		main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive,
-		main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput,
+		main_region_Connected_polling_region_Polling_polling_1_pollinginput,
+		main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll,
+		main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive,
+		main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput,
+		main_region_Connected_polling_region_Disconnecting,
 		$NullState$
 	};
 	
+	private State[] historyVector = new State[2];
 	private final State[] stateVector = new State[3];
 	
 	private int nextStateIndex;
 	
 	private ITimer timer;
 	
-	private final boolean[] timeEvents = new boolean[3];
+	private final boolean[] timeEvents = new boolean[7];
 	
 	private long currentserverindex;
 	
@@ -361,6 +370,21 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	}
 	
 	
+	private String currentroomid;
+	
+	protected String getCurrentroomid() {
+		synchronized(ChatRoomStatemachine.this) {
+			return currentroomid;
+		}
+	}
+	
+	protected void setCurrentroomid(String value) {
+		synchronized(ChatRoomStatemachine.this) {
+			this.currentroomid = value;
+		}
+	}
+	
+	
 	public ChatRoomStatemachine() {
 		sCINetwork = new SCINetworkImpl();
 		sCIUI = new SCIUIImpl();
@@ -387,11 +411,16 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		for (int i = 0; i < 3; i++) {
 			stateVector[i] = State.$NullState$;
 		}
+		for (int i = 0; i < 2; i++) {
+			historyVector[i] = State.$NullState$;
+		}
 		clearEvents();
 		clearOutEvents();
 		setCurrentserverindex(0);
 		
 		setInputafterlastpoll("");
+		
+		setCurrentroomid("");
 	}
 	
 	public synchronized void enter() {
@@ -416,11 +445,11 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			case main_region_Disconnected_disconnected_region_connecting:
 				main_region_Disconnected_disconnected_region_connecting_react(true);
 				break;
+			case main_region_Disconnected_disconnected_region_sudden_disconnection:
+				main_region_Disconnected_disconnected_region_sudden_disconnection_react(true);
+				break;
 			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
 				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected_react(true);
-				break;
-			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
-				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_react(true);
 				break;
 			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
 				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving_react(true);
@@ -428,14 +457,38 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left_react(true);
 				break;
-			case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-				main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_react(true);
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_react(true);
 				break;
-			case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-				main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_react(true);
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_react(true);
 				break;
-			case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-				main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_react(true);
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_react(true);
+				break;
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand_react(true);
+				break;
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining_react(true);
+				break;
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_react(true);
+				break;
+			case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+				main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage_react(true);
+				break;
+			case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+				main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll_react(true);
+				break;
+			case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+				main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive_react(true);
+				break;
+			case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+				main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_react(true);
+				break;
+			case main_region_Connected_polling_region_Disconnecting:
+				main_region_Connected_polling_region_Disconnecting_react(true);
 				break;
 			default:
 				// $NullState$
@@ -488,35 +541,51 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		switch (state) {
 		case main_region_Disconnected:
 			return stateVector[0].ordinal() >= State.
-					main_region_Disconnected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Disconnected_disconnected_region_connecting.ordinal();
+					main_region_Disconnected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Disconnected_disconnected_region_sudden_disconnection.ordinal();
 		case main_region_Disconnected_disconnected_region_connecting:
 			return stateVector[0] == State.main_region_Disconnected_disconnected_region_connecting;
+		case main_region_Disconnected_disconnected_region_sudden_disconnection:
+			return stateVector[0] == State.main_region_Disconnected_disconnected_region_sudden_disconnection;
 		case main_region_Connected:
 			return stateVector[0].ordinal() >= State.
-					main_region_Connected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
+					main_region_Connected.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_polling_region_Disconnecting.ordinal();
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow:
 			return stateVector[0].ordinal() >= State.
-					main_region_Connected_connection_lifetime_region_ConnectionFlow.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left.ordinal();
+					main_region_Connected_connection_lifetime_region_ConnectionFlow.ordinal()&& stateVector[0].ordinal() <= State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage.ordinal();
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
 			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected;
-		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
-			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
 			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			return stateVector[0] == State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage;
 		case main_region_Connected_polling_region_Polling:
 			return stateVector[1].ordinal() >= State.
-					main_region_Connected_polling_region_Polling.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
-		case main_region_Connected_polling_region_Polling_r1_pollinginput:
+					main_region_Connected_polling_region_Polling.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput.ordinal();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput:
 			return stateVector[1].ordinal() >= State.
-					main_region_Connected_polling_region_Polling_r1_pollinginput.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput.ordinal();
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-			return stateVector[1] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-			return stateVector[2] == State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput;
+					main_region_Connected_polling_region_Polling_polling_1_pollinginput.ordinal()&& stateVector[1].ordinal() <= State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput.ordinal();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+			return stateVector[1] == State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll;
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+			return stateVector[1] == State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive;
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+			return stateVector[2] == State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput;
+		case main_region_Connected_polling_region_Disconnecting:
+			return stateVector[1] == State.main_region_Connected_polling_region_Disconnecting;
 		default:
 			return false;
 		}
@@ -568,33 +637,74 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		sCINetwork.raiseConnect(sCINetwork.operationCallback.get_server(getCurrentserverindex()));
 	}
 	
-	/* Entry action for state 'isconnected'. */
-	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected() {
-		sCIUI.operationCallback.add_message("connected to server", "info");
+	/* Entry action for state 'sudden_disconnection'. */
+	private void entryAction_main_region_Disconnected_disconnected_region_sudden_disconnection() {
+		timer.setTimer(this, 1, (10 * 1000), false);
 		
-		sCINetwork.raiseJoin(1);
+		sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("attempting to connect to ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), "info");
+		
+		sCINetwork.raiseConnect(sCINetwork.operationCallback.get_server(getCurrentserverindex()));
 	}
 	
-	/* Entry action for state 'joined'. */
-	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined() {
-		sCIUI.operationCallback.add_message("joined room 1", "info");
+	/* Entry action for state 'isconnected'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected() {
+		timer.setTimer(this, 2, 100, false);
+		
+		sCIUI.operationCallback.add_message("connected to server", "info");
+		
+		sCIUI.operationCallback.input_command();
 	}
 	
 	/* Entry action for state 'leaving'. */
 	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving() {
-		sCIUI.operationCallback.add_message("leaving room 1", "info");
+		sCIUI.operationCallback.add_message("leaving chat room", "info");
 		
 		sCINetwork.raiseLeave();
 	}
 	
 	/* Entry action for state 'left'. */
 	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left() {
-		sCIUI.operationCallback.add_message("left room 1", "info");
+		sCIUI.operationCallback.add_message("left chat room and disconnecting from server.", "info");
+		
+		sCINetwork.raiseDisconnect();
+	}
+	
+	/* Entry action for state 'selectingroom'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom() {
+		sCIUI.operationCallback.input_join();
+		
+		sCIUI.operationCallback.add_message("Press a digit key to select a room.", "info");
+	}
+	
+	/* Entry action for state 'setinputcommand'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand() {
+		sCIUI.operationCallback.input_command();
+		
+		sCIUI.operationCallback.add_message("You can input a command now.You could try joining a room. To join a room,press j.", "info");
+	}
+	
+	/* Entry action for state 'joined'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined() {
+		sCIUI.operationCallback.input_command();
+	}
+	
+	/* Entry action for state 'messagecommand'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand() {
+		sCIUI.operationCallback.input_msg();
+	}
+	
+	/* Entry action for state 'sendingmessage'. */
+	private void entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage() {
+		timer.setTimer(this, 3, 100, false);
+		
+		sCIUI.operationCallback.add_message(sCIUI.operationCallback.get_buffer(), "local_message");
+		
+		sCIUI.operationCallback.clear_input();
 	}
 	
 	/* Entry action for state 'sendpoll'. */
-	private void entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
-		timer.setTimer(this, 1, (20 * 1000), false);
+	private void entryAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll() {
+		timer.setTimer(this, 4, (20 * 1000), false);
 		
 		sCIUtil.operationCallback.print("polling connected server");
 		
@@ -604,10 +714,15 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	}
 	
 	/* Entry action for state 'serveralive'. */
-	private void entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
-		timer.setTimer(this, 2, (10 * 1000), false);
+	private void entryAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive() {
+		timer.setTimer(this, 5, (10 * 1000), false);
 		
 		sCIUtil.operationCallback.print("connected server is still alive.");
+	}
+	
+	/* Entry action for state 'Disconnecting'. */
+	private void entryAction_main_region_Connected_polling_region_Disconnecting() {
+		timer.setTimer(this, 6, (1 * 1000), false);
 	}
 	
 	/* Exit action for state 'connecting'. */
@@ -615,14 +730,34 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		timer.unsetTimer(this, 0);
 	}
 	
-	/* Exit action for state 'sendpoll'. */
-	private void exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
+	/* Exit action for state 'sudden_disconnection'. */
+	private void exitAction_main_region_Disconnected_disconnected_region_sudden_disconnection() {
 		timer.unsetTimer(this, 1);
 	}
 	
-	/* Exit action for state 'serveralive'. */
-	private void exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
+	/* Exit action for state 'isconnected'. */
+	private void exitAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected() {
 		timer.unsetTimer(this, 2);
+	}
+	
+	/* Exit action for state 'sendingmessage'. */
+	private void exitAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage() {
+		timer.unsetTimer(this, 3);
+	}
+	
+	/* Exit action for state 'sendpoll'. */
+	private void exitAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll() {
+		timer.unsetTimer(this, 4);
+	}
+	
+	/* Exit action for state 'serveralive'. */
+	private void exitAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive() {
+		timer.unsetTimer(this, 5);
+	}
+	
+	/* Exit action for state 'Disconnecting'. */
+	private void exitAction_main_region_Connected_polling_region_Disconnecting() {
+		timer.unsetTimer(this, 6);
 	}
 	
 	/* 'default' enter sequence for state Disconnected */
@@ -637,6 +772,13 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		stateVector[0] = State.main_region_Disconnected_disconnected_region_connecting;
 	}
 	
+	/* 'default' enter sequence for state sudden_disconnection */
+	private void enterSequence_main_region_Disconnected_disconnected_region_sudden_disconnection_default() {
+		entryAction_main_region_Disconnected_disconnected_region_sudden_disconnection();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Disconnected_disconnected_region_sudden_disconnection;
+	}
+	
 	/* 'default' enter sequence for state Connected */
 	private void enterSequence_main_region_Connected_default() {
 		enterSequence_main_region_Connected_connection_lifetime_region_default();
@@ -646,6 +788,7 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	/* 'default' enter sequence for state ConnectionFlow */
 	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_default() {
 		enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_default();
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state isconnected */
@@ -653,13 +796,8 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected;
-	}
-	
-	/* 'default' enter sequence for state joined */
-	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default() {
-		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
-		nextStateIndex = 0;
-		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined;
+		
+		historyVector[1] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state leaving */
@@ -667,6 +805,8 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving;
+		
+		historyVector[1] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state left */
@@ -674,37 +814,107 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state selectingroom */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_default() {
+		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state setinputcommand */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_default() {
+		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state joined */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default() {
+		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state messagecommand */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand_default() {
+		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state joining */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining_default() {
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state enteringmessage */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_default() {
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage;
+		
+		historyVector[1] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state sendingmessage */
+	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage_default() {
+		entryAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage;
+		
+		historyVector[1] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state Polling */
 	private void enterSequence_main_region_Connected_polling_region_Polling_default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_default();
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_default();
 	}
 	
 	/* 'default' enter sequence for state pollinginput */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_default();
-		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_default();
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_default() {
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_default();
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_default();
 	}
 	
 	/* 'default' enter sequence for state sendpoll */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default() {
-		entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll_default() {
+		entryAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
 		nextStateIndex = 1;
-		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll;
+		stateVector[1] = State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll;
 	}
 	
 	/* 'default' enter sequence for state serveralive */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_default() {
-		entryAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive_default() {
+		entryAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
 		nextStateIndex = 1;
-		stateVector[1] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive;
+		stateVector[1] = State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive;
 	}
 	
 	/* 'default' enter sequence for state rememberinginput */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default() {
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default() {
 		nextStateIndex = 2;
-		stateVector[2] = State.main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput;
+		stateVector[2] = State.main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput;
+	}
+	
+	/* 'default' enter sequence for state Disconnecting */
+	private void enterSequence_main_region_Connected_polling_region_Disconnecting_default() {
+		entryAction_main_region_Connected_polling_region_Disconnecting();
+		nextStateIndex = 1;
+		stateVector[1] = State.main_region_Connected_polling_region_Disconnecting;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -722,9 +932,85 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		react_main_region_Connected_connection_lifetime_region__entry_Default();
 	}
 	
+	/* deep enterSequence with history in child connection lifetime region */
+	private void deepEnterSequence_main_region_Connected_connection_lifetime_region() {
+		switch (historyVector[0]) {
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region();
+			break;
+		default:
+			break;
+		}
+	}
+	
 	/* 'default' enter sequence for region connectionflow region */
 	private void enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_default() {
 		react_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region__entry_Default();
+	}
+	
+	/* deep enterSequence with history in child connectionflow region */
+	private void deepEnterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region() {
+		switch (historyVector[1]) {
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_default();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage_default();
+			break;
+		default:
+			break;
+		}
 	}
 	
 	/* 'default' enter sequence for region polling region */
@@ -732,19 +1018,19 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		react_main_region_Connected_polling_region__entry_Default();
 	}
 	
-	/* 'default' enter sequence for region r1 */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_default() {
-		react_main_region_Connected_polling_region_Polling_r1__entry_Default();
+	/* 'default' enter sequence for region polling_1 */
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_default() {
+		react_main_region_Connected_polling_region_Polling_polling_1__entry_Default();
 	}
 	
-	/* 'default' enter sequence for region r1 */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_default() {
-		react_main_region_Connected_polling_region_Polling_r1_pollinginput_r1__entry_Default();
+	/* 'default' enter sequence for region polling_1_poll */
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_default() {
+		react_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll__entry_Default();
 	}
 	
-	/* 'default' enter sequence for region r2 */
-	private void enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_default() {
-		react_main_region_Connected_polling_region_Polling_r1_pollinginput_r2__entry_Default();
+	/* 'default' enter sequence for region polling_1_input */
+	private void enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_default() {
+		react_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input__entry_Default();
 	}
 	
 	/* Default exit sequence for state Disconnected */
@@ -760,6 +1046,14 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		exitAction_main_region_Disconnected_disconnected_region_connecting();
 	}
 	
+	/* Default exit sequence for state sudden_disconnection */
+	private void exitSequence_main_region_Disconnected_disconnected_region_sudden_disconnection() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_region_Disconnected_disconnected_region_sudden_disconnection();
+	}
+	
 	/* Default exit sequence for state Connected */
 	private void exitSequence_main_region_Connected() {
 		exitSequence_main_region_Connected_connection_lifetime_region();
@@ -770,12 +1064,8 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
-	}
-	
-	/* Default exit sequence for state joined */
-	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined() {
-		nextStateIndex = 0;
-		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
 	}
 	
 	/* Default exit sequence for state leaving */
@@ -790,26 +1080,83 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		stateVector[0] = State.$NullState$;
 	}
 	
+	/* Default exit sequence for state selectingroom */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state setinputcommand */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state joined */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state messagecommand */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state joining */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state enteringmessage */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state sendingmessage */
+	private void exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
+	}
+	
+	/* Default exit sequence for state Polling */
+	private void exitSequence_main_region_Connected_polling_region_Polling() {
+		exitSequence_main_region_Connected_polling_region_Polling_polling_1();
+	}
+	
 	/* Default exit sequence for state sendpoll */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll() {
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll() {
 		nextStateIndex = 1;
 		stateVector[1] = State.$NullState$;
 		
-		exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+		exitAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
 	}
 	
 	/* Default exit sequence for state serveralive */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive() {
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive() {
 		nextStateIndex = 1;
 		stateVector[1] = State.$NullState$;
 		
-		exitAction_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+		exitAction_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
 	}
 	
 	/* Default exit sequence for state rememberinginput */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput() {
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput() {
 		nextStateIndex = 2;
 		stateVector[2] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state Disconnecting */
+	private void exitSequence_main_region_Connected_polling_region_Disconnecting() {
+		nextStateIndex = 1;
+		stateVector[1] = State.$NullState$;
+		
+		exitAction_main_region_Connected_polling_region_Disconnecting();
 	}
 	
 	/* Default exit sequence for region main region */
@@ -818,11 +1165,11 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		case main_region_Disconnected_disconnected_region_connecting:
 			exitSequence_main_region_Disconnected_disconnected_region_connecting();
 			break;
+		case main_region_Disconnected_disconnected_region_sudden_disconnection:
+			exitSequence_main_region_Disconnected_disconnected_region_sudden_disconnection();
+			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
-			break;
-		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
-			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
 			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving();
@@ -830,24 +1177,48 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left();
 			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
+			break;
 		default:
 			break;
 		}
 		
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
+			break;
+		case main_region_Connected_polling_region_Disconnecting:
+			exitSequence_main_region_Connected_polling_region_Disconnecting();
 			break;
 		default:
 			break;
 		}
 		
 		switch (stateVector[2]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 			break;
 		default:
 			break;
@@ -860,6 +1231,9 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		case main_region_Disconnected_disconnected_region_connecting:
 			exitSequence_main_region_Disconnected_disconnected_region_connecting();
 			break;
+		case main_region_Disconnected_disconnected_region_sudden_disconnection:
+			exitSequence_main_region_Disconnected_disconnected_region_sudden_disconnection();
+			break;
 		default:
 			break;
 		}
@@ -871,14 +1245,32 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
 			break;
-		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
-			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
-			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving();
 			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
 			break;
 		default:
 			break;
@@ -891,14 +1283,32 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
 			break;
-		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
-			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
-			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving();
 			break;
 		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left:
 			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_left();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+			break;
+		case main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage:
+			exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
 			break;
 		default:
 			break;
@@ -908,66 +1318,69 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	/* Default exit sequence for region polling region */
 	private void exitSequence_main_region_Connected_polling_region() {
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
 			break;
-		default:
-			break;
-		}
-		
-		switch (stateVector[2]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
-			break;
-		default:
-			break;
-		}
-	}
-	
-	/* Default exit sequence for region r1 */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1() {
-		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
-			break;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+		case main_region_Connected_polling_region_Disconnecting:
+			exitSequence_main_region_Connected_polling_region_Disconnecting();
 			break;
 		default:
 			break;
 		}
 		
 		switch (stateVector[2]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 			break;
 		default:
 			break;
 		}
 	}
 	
-	/* Default exit sequence for region r1 */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1() {
+	/* Default exit sequence for region polling_1 */
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1() {
 		switch (stateVector[1]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
 			break;
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[2]) {
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 			break;
 		default:
 			break;
 		}
 	}
 	
-	/* Default exit sequence for region r2 */
-	private void exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2() {
+	/* Default exit sequence for region polling_1_poll */
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll() {
+		switch (stateVector[1]) {
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
+			break;
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region polling_1_input */
+	private void exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input() {
 		switch (stateVector[2]) {
-		case main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput:
-			exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+		case main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput:
+			exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 			break;
 		default:
 			break;
@@ -989,24 +1402,29 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected_default();
 	}
 	
-	/* Default react sequence for initial entry  */
+	/* Default react sequence for deep history entry  */
 	private void react_main_region_Connected_connection_lifetime_region__entry_Default() {
-		enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_default();
+		/* Enter the region with deep history */
+		if (historyVector[0] != State.$NullState$) {
+			deepEnterSequence_main_region_Connected_connection_lifetime_region();
+		} else {
+			enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_default();
+		}
 	}
 	
 	/* Default react sequence for initial entry  */
-	private void react_main_region_Connected_polling_region_Polling_r1__entry_Default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_default();
+	private void react_main_region_Connected_polling_region_Polling_polling_1__entry_Default() {
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_default();
 	}
 	
 	/* Default react sequence for initial entry  */
-	private void react_main_region_Connected_polling_region_Polling_r1_pollinginput_r1__entry_Default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default();
+	private void react_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll__entry_Default() {
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll_default();
 	}
 	
 	/* Default react sequence for initial entry  */
-	private void react_main_region_Connected_polling_region_Polling_r1_pollinginput_r2__entry_Default() {
-		enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
+	private void react_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input__entry_Default() {
+		enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default();
 	}
 	
 	/* Default react sequence for initial entry  */
@@ -1036,13 +1454,39 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			if (main_region_Disconnected_react(try_transition)==false) {
 				if (sCINetwork.connected) {
 					exitSequence_main_region_Disconnected();
-					enterSequence_main_region_Connected_default();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected_default();
+					historyVector[0] = stateVector[0];
+					
+					enterSequence_main_region_Connected_polling_region_default();
 				} else {
 					if (timeEvents[0]) {
 						exitSequence_main_region_Disconnected_disconnected_region_connecting();
 						setCurrentserverindex(currentserverindex<(sCINetwork.operationCallback.get_nr_of_servers() - 1) ? (currentserverindex + 1) : 0);
 						
 						enterSequence_main_region_Disconnected_disconnected_region_connecting_default();
+					} else {
+						did_transition = false;
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Disconnected_disconnected_region_sudden_disconnection_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Disconnected_react(try_transition)==false) {
+				if (sCINetwork.connected) {
+					exitSequence_main_region_Disconnected();
+					enterSequence_main_region_Connected_default();
+				} else {
+					if (timeEvents[1]) {
+						exitSequence_main_region_Disconnected_disconnected_region_sudden_disconnection();
+						setCurrentserverindex(currentserverindex<(sCINetwork.operationCallback.get_nr_of_servers() - 1) ? (currentserverindex + 1) : 0);
+						
+						enterSequence_main_region_Disconnected_disconnected_region_sudden_disconnection_default();
 					} else {
 						did_transition = false;
 					}
@@ -1079,25 +1523,9 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		
 		if (try_transition) {
 			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
-				if (sCINetwork.joined) {
+				if (timeEvents[2]) {
 					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected();
-					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default();
-				} else {
-					did_transition = false;
-				}
-			}
-		}
-		return did_transition;
-	}
-	
-	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
-				if (((sCIUI.input) && ((sCIUI.getInputValue()== null?"k" ==null :sCIUI.getInputValue().equals("k"))))) {
-					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
-					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving_default();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_default();
 				} else {
 					did_transition = false;
 				}
@@ -1127,7 +1555,182 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		
 		if (try_transition) {
 			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
-				did_transition = false;
+				if (sCINetwork.disconnected) {
+					exitSequence_main_region_Connected();
+					enterSequence_main_region_Disconnected_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_default();
+				} else {
+					if (((sCIUI.input) && (sCIUtil.operationCallback.is_numerical(sCIUI.getInputValue())))) {
+						exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+						setCurrentroomid(sCIUI.getInputValue());
+						
+						sCINetwork.raiseJoin(sCIUtil.operationCallback.stoi(getCurrentroomid()));
+						
+						enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining_default();
+					} else {
+						if (((sCIUI.input) && (!sCIUtil.operationCallback.is_numerical(sCIUI.getInputValue())))) {
+							exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom();
+							sCIUI.operationCallback.add_message("A room ID should be numerical.", "info");
+							
+							enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_default();
+						} else {
+							did_transition = false;
+						}
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (((sCIUI.input) && ((sCIUI.getInputValue()== null?"j" ==null :sCIUI.getInputValue().equals("j"))))) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_setinputcommand();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (((sCIUI.input) && ((sCIUI.getInputValue()== null?"k" ==null :sCIUI.getInputValue().equals("k"))))) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_leaving_default();
+				} else {
+					if (((sCIUI.input) && ((sCIUI.getInputValue()== null?"l" ==null :sCIUI.getInputValue().equals("l"))))) {
+						exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("You are leaving room ", getCurrentroomid()), "info");
+						
+						enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_isconnected_default();
+					} else {
+						if (((sCIUI.input) && ((sCIUI.getInputValue()== null?"m" ==null :sCIUI.getInputValue().equals("m"))))) {
+							exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+							sCIUI.operationCallback.add_message("You can now write messages. Press Enter to send a message", "info");
+							
+							enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand_default();
+						} else {
+							if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+								exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined();
+								enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_selectingroom_default();
+							} else {
+								did_transition = false;
+							}
+						}
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (((sCIUI.input) && (sCIUtil.operationCallback.is_alphanumerical(sCIUI.getInputValue())))) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+					sCIUI.operationCallback.append_to_buffer(sCIUI.getInputValue());
+					
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_default();
+				} else {
+					if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+						exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_messagecommand();
+						enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default();
+					} else {
+						did_transition = false;
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (sCINetwork.joined) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joining();
+					sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("joined room ", getCurrentroomid()), "info");
+					
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (((sCIUI.input) && ((!sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue()) && !sCIUtil.operationCallback.is_enter(sCIUI.getInputValue()))))) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+					sCIUI.operationCallback.append_to_buffer(sCIUI.getInputValue());
+					
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_default();
+				} else {
+					if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+						exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+						sCIUI.operationCallback.remove_last_in_buffer();
+						
+						enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage_default();
+					} else {
+						if (((sCIUI.input) && (sCIUtil.operationCallback.is_enter(sCIUI.getInputValue())))) {
+							exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_enteringmessage();
+							enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage_default();
+						} else {
+							did_transition = false;
+						}
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_region_Connected_connection_lifetime_region_ConnectionFlow_react(try_transition)==false) {
+				if (timeEvents[3]) {
+					exitSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_sendingmessage();
+					enterSequence_main_region_Connected_connection_lifetime_region_ConnectionFlow_connectionflow_region_joined_default();
+				} else {
+					did_transition = false;
+				}
 			}
 		}
 		return did_transition;
@@ -1142,7 +1745,7 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_polling_1_pollinginput_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
@@ -1153,24 +1756,22 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
-			if (main_region_Connected_polling_region_Polling_r1_pollinginput_react(try_transition)==false) {
+			if (main_region_Connected_polling_region_Polling_polling_1_pollinginput_react(try_transition)==false) {
 				if (sCINetwork.alive) {
-					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll();
-					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_default();
+					exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll();
+					enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive_default();
 				} else {
-					if (timeEvents[1]) {
-						exitSequence_main_region_Connected();
+					if (timeEvents[4]) {
+						exitSequence_main_region_Connected_polling_region_Polling();
 						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate(sCIUtil.operationCallback.concatenate("server ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), " is not responding. Disconnecting"), "info");
 						
 						sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("Showing input sent after last poll: ", getInputafterlastpoll()), "info");
 						
-						setCurrentserverindex(currentserverindex<(sCINetwork.operationCallback.get_nr_of_servers() - 1) ? (currentserverindex + 1) : 0);
-						
-						enterSequence_main_region_Disconnected_default();
+						enterSequence_main_region_Connected_polling_region_Disconnecting_default();
 					} else {
 						did_transition = false;
 					}
@@ -1180,14 +1781,14 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
-			if (main_region_Connected_polling_region_Polling_r1_pollinginput_react(try_transition)==false) {
-				if (timeEvents[2]) {
-					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_serveralive();
-					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r1_sendpoll_default();
+			if (main_region_Connected_polling_region_Polling_polling_1_pollinginput_react(try_transition)==false) {
+				if (timeEvents[5]) {
+					exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_serveralive();
+					enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_poll_sendpoll_default();
 				} else {
 					did_transition = false;
 				}
@@ -1196,24 +1797,49 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 		return did_transition;
 	}
 	
-	private boolean main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_react(boolean try_transition) {
+	private boolean main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
 			if (((sCIUI.input) && (sCIUtil.operationCallback.is_alphanumerical(sCIUI.getInputValue())))) {
-				exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+				exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 				setInputafterlastpoll(sCIUtil.operationCallback.concatenate(getInputafterlastpoll(), sCIUI.getInputValue()));
 				
-				enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
+				enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default();
 			} else {
 				if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
-					exitSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput();
+					exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 					setInputafterlastpoll(sCIUtil.operationCallback.remove_last_char(getInputafterlastpoll()));
 					
-					enterSequence_main_region_Connected_polling_region_Polling_r1_pollinginput_r2_rememberinginput_default();
+					enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default();
 				} else {
-					did_transition = false;
+					if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+						exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
+						setInputafterlastpoll(sCIUtil.operationCallback.concatenate(getInputafterlastpoll(), sCIUI.getInputValue()));
+						
+						enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default();
+					} else {
+						did_transition = false;
+					}
 				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Connected_polling_region_Disconnecting_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (timeEvents[6]) {
+				exitSequence_main_region_Connected();
+				sCIUI.operationCallback.add_message("Suddenly disconnected from chat server.", "info");
+				
+				sCIUI.operationCallback.add_message("Restoring previous session.", "info");
+				
+				enterSequence_main_region_Disconnected_disconnected_region_sudden_disconnection_default();
+			} else {
+				did_transition = false;
 			}
 		}
 		return did_transition;

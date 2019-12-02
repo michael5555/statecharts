@@ -18,8 +18,10 @@ testclass ChatRoomTests for statechart ChatRoom {
 		assert active(ChatRoom.main_region.Connected)
 		assert active(ChatRoom.main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
 		proceed 20 s
-		raise Network.disconnected
-		assert active(ChatRoom.main_region.Disconnected)
+
+		assert active(ChatRoom.main_region.Connected.polling_region.Disconnecting)
+		proceed 1 s
+		assert active(main_region.Disconnected)
 
 		exit
 	}
@@ -40,8 +42,9 @@ testclass ChatRoomTests for statechart ChatRoom {
 		assert active(ChatRoom.main_region.Connected)
 		assert active(ChatRoom.main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
 		proceed 20 s
-		raise Network.disconnected
-		assert active(ChatRoom.main_region.Disconnected)
+		assert active(ChatRoom.main_region.Connected.polling_region.Disconnecting)
+		proceed 1 s
+		assert active(main_region.Disconnected)
 		
 		exit
 	}
@@ -66,7 +69,7 @@ testclass ChatRoomTests for statechart ChatRoom {
 		raise Network.connected
 		assert active(ChatRoom.main_region.Connected)
 		assert active(ChatRoom.main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
-		proceed 1 s
+		proceed 100 ms
 		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
 		raise UI.input: "j"
 		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
@@ -95,8 +98,9 @@ testclass ChatRoomTests for statechart ChatRoom {
 
 		assert active(ChatRoom.main_region.Connected.polling_region.Polling.polling_1.pollinginput.polling_1_poll.sendpoll)
 		proceed 20 s
-		raise Network.disconnected
-		assert active(ChatRoom.main_region.Disconnected)
+		assert active(ChatRoom.main_region.Connected.polling_region.Disconnecting)
+		proceed 1 s
+		assert active(main_region.Disconnected)
 		
 		exit
 	}
@@ -119,7 +123,7 @@ testclass ChatRoomTests for statechart ChatRoom {
 		raise Network.connected
 		assert active(ChatRoom.main_region.Connected)
 		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
-		proceed 1 s
+		proceed 100 ms
 		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
 		raise UI.input: "j"
 		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
@@ -132,6 +136,131 @@ testclass ChatRoomTests for statechart ChatRoom {
 
 		exit
 	}
+	
+	@Test
+	operation check_leaving_room() {
+		enter
+		
+		mock Network.get_server(0) returns ("localhost:8000")
+		mock Network.get_server(1) returns ("localhost:8001")
+		mock Network.get_nr_of_servers() returns (2)
+		mock util.is_numerical("2") returns (true)
+		mock util.stoi("2") returns (2)
+
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
+		proceed 100 ms
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
+		raise UI.input: "j"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+		raise UI.input: '2'
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joining)
+		raise Network.joined
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+		raise UI.input: "l"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
+
+		exit
+	}
+	@Test
+	operation check_sending_message() {
+		enter
+		
+		mock Network.get_server(0) returns ("localhost:8000")
+		mock Network.get_server(1) returns ("localhost:8001")
+		mock Network.get_nr_of_servers() returns (2)
+		mock util.is_numerical("2") returns (true)
+		mock util.stoi("2") returns (2)
+	
+		mock util.is_alphanumerical("h") returns (true)
+		mock util.is_alphanumerical("e") returns (true)
+		mock util.is_alphanumerical("l") returns (true)
+		mock util.is_alphanumerical("o") returns (true)
+		mock util.is_alphanumerical("!") returns (true)
+
+		mock util.is_backspace("\b") returns (true)
+		mock util.is_enter("\r") returns (true)
+
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
+		proceed 100 ms
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
+		raise UI.input: "j"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+		raise UI.input: '2'
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joining)
+		raise Network.joined
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+		raise UI.input: "m"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.messagecommand)
+		raise UI.input: "h"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+
+		raise UI.input: "e"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "l"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "l"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "o"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "!"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "\b"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.enteringmessage)
+		raise UI.input: "\r"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.sendingmessage)
+
+		exit
+	}
+
+	@Test
+	operation check_disconnecting_from_chatroom() {
+		enter
+		
+		mock Network.get_server(0) returns ("localhost:8000")
+		mock Network.get_server(1) returns ("localhost:8001")
+		mock Network.get_nr_of_servers() returns (2)
+		mock util.is_numerical("2") returns (true)
+		mock util.stoi("2") returns (2)
+
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
+		proceed 100 ms
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
+		raise UI.input: "j"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+		raise UI.input: '2'
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joining)
+		raise Network.joined
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+		raise UI.input: "k"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.leaving)
+		raise Network.left
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.left)
+		raise Network.disconnected
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+		assert active(ChatRoom.main_region.Disconnected.disconnected_region.connecting)
+
+		exit
+	}
+
 
 
 	
