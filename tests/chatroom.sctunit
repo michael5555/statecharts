@@ -260,6 +260,61 @@ testclass ChatRoomTests for statechart ChatRoom {
 
 		exit
 	}
+	
+	@Test
+	operation check_backspace_support() {
+		enter
+		
+		mock Network.get_server(0) returns ("localhost:8000")
+		mock Network.get_server(1) returns ("localhost:8001")
+		mock Network.get_nr_of_servers() returns (2)
+		mock util.is_numerical("2") returns (true)
+		mock util.stoi("2") returns (2)
+		
+		mock util.is_alphanumerical("h") returns (true)
+		mock util.is_alphanumerical("e") returns (true)
+		mock util.is_alphanumerical("l") returns (true)
+		mock util.is_alphanumerical("o") returns (true)
+		mock util.is_alphanumerical("!") returns (true)
+
+		mock util.is_backspace("\b") returns (true)
+		mock util.is_enter("\r") returns (true)
+
+
+		
+		assert !active(ChatRoom.main_region.Connected)
+		assert active(ChatRoom.main_region.Disconnected)
+
+		raise Network.connected
+		assert active(ChatRoom.main_region.Connected)
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.isconnected)
+		proceed 100 ms
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
+		raise UI.input: "j"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+		raise UI.input: "\b"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.setinputcommand)
+		raise UI.input: "j"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+
+		raise UI.input: '2'
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joining)
+		raise Network.joined
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+		raise UI.input: "\b"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.selectingroom)
+		raise UI.input: '2'
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joining)
+		raise Network.joined
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+		raise UI.input: "m"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.messagecommand)
+		raise UI.input: "\b"
+		assert active(main_region.Connected.connection_lifetime_region.ConnectionFlow.connectionflow_region.joined)
+
+		exit
+	}
+
 
 
 

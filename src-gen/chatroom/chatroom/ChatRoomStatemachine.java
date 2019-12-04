@@ -639,9 +639,9 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 	
 	/* Entry action for state 'sudden_disconnection'. */
 	private void entryAction_main_region_Disconnected_disconnected_region_sudden_disconnection() {
-		timer.setTimer(this, 1, (10 * 1000), false);
+		timer.setTimer(this, 1, (5 * 1000), false);
 		
-		sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("attempting to connect to ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), "info");
+		sCIUI.operationCallback.add_message(sCIUtil.operationCallback.concatenate("attempting to reconnect to ", sCINetwork.operationCallback.get_server(getCurrentserverindex())), "info");
 		
 		sCINetwork.raiseConnect(sCINetwork.operationCallback.get_server(getCurrentserverindex()));
 	}
@@ -1480,12 +1480,12 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 			if (main_region_Disconnected_react(try_transition)==false) {
 				if (sCINetwork.connected) {
 					exitSequence_main_region_Disconnected();
+					sCIUI.operationCallback.add_message("reconnecting to previous server.", "info");
+					
 					enterSequence_main_region_Connected_default();
 				} else {
 					if (timeEvents[1]) {
 						exitSequence_main_region_Disconnected_disconnected_region_sudden_disconnection();
-						setCurrentserverindex(currentserverindex<(sCINetwork.operationCallback.get_nr_of_servers() - 1) ? (currentserverindex + 1) : 0);
-						
 						enterSequence_main_region_Disconnected_disconnected_region_sudden_disconnection_default();
 					} else {
 						did_transition = false;
@@ -1813,7 +1813,7 @@ public class ChatRoomStatemachine implements IChatRoomStatemachine {
 					
 					enterSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput_default();
 				} else {
-					if (((sCIUI.input) && (sCIUtil.operationCallback.is_backspace(sCIUI.getInputValue())))) {
+					if (((sCIUI.input) && (sCIUtil.operationCallback.is_enter(sCIUI.getInputValue())))) {
 						exitSequence_main_region_Connected_polling_region_Polling_polling_1_pollinginput_polling_1_input_rememberinginput();
 						setInputafterlastpoll(sCIUtil.operationCallback.concatenate(getInputafterlastpoll(), sCIUI.getInputValue()));
 						

@@ -14,9 +14,9 @@
           <vertices xsi:type="sgraph:Entry" xmi:id="_fG5j4BQrEeq21fwMhexhhw">
             <outgoingTransitions xmi:id="_ilOE4BQrEeq21fwMhexhhw" specification="" target="_hxPw0PvuEemq3KCfih1t0w"/>
           </vertices>
-          <vertices xsi:type="sgraph:State" xmi:id="_wS2vUBU4EeqUMYl_YgdKeg" specification="entry/  UI.add_message(util.concatenate(&quot;attempting to connect to &quot;,&#xA;&#x9;Network.get_server(currentserverindex)&#xA;),&quot;info&quot;);&#xA;raise Network.connect: Network.get_server(currentserverindex)" name="sudden_disconnection" incomingTransitions="_dxoYABUFEeqrCaFJv01Uqw _8rJFMBU5EeqUMYl_YgdKeg">
-            <outgoingTransitions xmi:id="_fnZCIBU5EeqUMYl_YgdKeg" specification="Network.connected" target="_0iRUwBQ1EeqN7aZs20I00g"/>
-            <outgoingTransitions xmi:id="_8rJFMBU5EeqUMYl_YgdKeg" specification="after 10 s/  currentserverindex = currentserverindex&#xA; &lt; Network.get_nr_of_servers()-1&#xA; ? currentserverindex+1 :0" target="_wS2vUBU4EeqUMYl_YgdKeg"/>
+          <vertices xsi:type="sgraph:State" xmi:id="_wS2vUBU4EeqUMYl_YgdKeg" specification="entry/  UI.add_message(util.concatenate(&quot;attempting to reconnect to &quot;,&#xA;&#x9;Network.get_server(currentserverindex)&#xA;),&quot;info&quot;);&#xA;raise Network.connect: Network.get_server(currentserverindex)" name="sudden_disconnection" incomingTransitions="_dxoYABUFEeqrCaFJv01Uqw _8rJFMBU5EeqUMYl_YgdKeg">
+            <outgoingTransitions xmi:id="_fnZCIBU5EeqUMYl_YgdKeg" specification="Network.connected/ UI.add_message(&quot;reconnecting to previous server.&quot;,&quot;info&quot;)" target="_0iRUwBQ1EeqN7aZs20I00g"/>
+            <outgoingTransitions xmi:id="_8rJFMBU5EeqUMYl_YgdKeg" specification="after 5 s" target="_wS2vUBU4EeqUMYl_YgdKeg"/>
           </vertices>
         </regions>
       </vertices>
@@ -97,7 +97,7 @@
                   <vertices xsi:type="sgraph:State" xmi:id="_67Jr8BRBEeqLgvV-ZQcg5w" name="rememberinginput" incomingTransitions="_90ZxABRBEeqLgvV-ZQcg5w _d3RQkBRCEeqLgvV-ZQcg5w _9jO2kBRDEeqLgvV-ZQcg5w _BmtywBRHEeqLgvV-ZQcg5w">
                     <outgoingTransitions xmi:id="_d3RQkBRCEeqLgvV-ZQcg5w" specification="UI.input[util.is_alphanumerical(valueof(UI.input))] / &#xA;inputafterlastpoll = util.concatenate&#xA;(inputafterlastpoll,valueof(UI.input))" target="_67Jr8BRBEeqLgvV-ZQcg5w"/>
                     <outgoingTransitions xmi:id="_9jO2kBRDEeqLgvV-ZQcg5w" specification="UI.input[util.is_backspace(valueof(UI.input))] /&#xA;inputafterlastpoll = util.remove_last_char&#xA;(inputafterlastpoll)" target="_67Jr8BRBEeqLgvV-ZQcg5w"/>
-                    <outgoingTransitions xmi:id="_BmtywBRHEeqLgvV-ZQcg5w" specification="UI.input[util.is_backspace(valueof(UI.input))] /&#xA;inputafterlastpoll = util.concatenate&#xA;(inputafterlastpoll,valueof(UI.input))" target="_67Jr8BRBEeqLgvV-ZQcg5w"/>
+                    <outgoingTransitions xmi:id="_BmtywBRHEeqLgvV-ZQcg5w" specification="UI.input[util.is_enter(valueof(UI.input))] /&#xA;inputafterlastpoll = util.concatenate&#xA;(inputafterlastpoll,valueof(UI.input))" target="_67Jr8BRBEeqLgvV-ZQcg5w"/>
                   </vertices>
                 </regions>
               </vertices>
@@ -1058,11 +1058,11 @@
     <edges xmi:id="_8rK6YBU5EeqUMYl_YgdKeg" type="Transition" element="_8rJFMBU5EeqUMYl_YgdKeg" source="_wS5yoBU4EeqUMYl_YgdKeg" target="_wS5yoBU4EeqUMYl_YgdKeg">
       <children xsi:type="notation:DecorationNode" xmi:id="_8rK6ZBU5EeqUMYl_YgdKeg" type="TransitionExpression">
         <styles xsi:type="notation:ShapeStyle" xmi:id="_8rK6ZRU5EeqUMYl_YgdKeg"/>
-        <layoutConstraint xsi:type="notation:Location" xmi:id="_8rK6ZhU5EeqUMYl_YgdKeg" x="89" y="-27"/>
+        <layoutConstraint xsi:type="notation:Location" xmi:id="_8rK6ZhU5EeqUMYl_YgdKeg" x="-5" y="-19"/>
       </children>
       <styles xsi:type="notation:ConnectorStyle" xmi:id="_8rK6YRU5EeqUMYl_YgdKeg" routing="Rectilinear" lineColor="4210752"/>
       <styles xsi:type="notation:FontStyle" xmi:id="_8rK6YxU5EeqUMYl_YgdKeg" fontName="Verdana"/>
-      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_8rK6YhU5EeqUMYl_YgdKeg" points="[-124, -63, -124, -63]$[-124, -147, -124, -147]$[-65, -147, -65, -147]$[-65, -63, -65, -63]"/>
+      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_8rK6YhU5EeqUMYl_YgdKeg" points="[-60, -63, -60, -63]$[-60, -147, -60, -147]$[-12, -147, -12, -147]$[-12, -63, -12, -63]"/>
       <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_8rNWoBU5EeqUMYl_YgdKeg" id="(0.8790560471976401,0.8947368421052632)"/>
       <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_8rNWoRU5EeqUMYl_YgdKeg" id="(0.8790560471976401,0.8947368421052632)"/>
     </edges>

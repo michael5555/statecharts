@@ -15,4 +15,6 @@
   </testcase>
   <testcase name="check_disconnecting_from_chatroom" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_disconnecting_from_chatroom" time="">
   </testcase>
+  <testcase name="check_backspace_support" classname="platform:/resource/ChatRoom/tests/chatroom.sctunit#chatroom.test.ChatRoomTests.check_backspace_support" time="">
+  </testcase>
 </testsuite>
